@@ -3,3 +3,13 @@ __pycache__/
 .venv/ 
 venv/ 
 .env 
+
+# Local ML experiment scripts
+*_experiment.py
+data_diagnostics.py
+error_analysis.py
+feature_importance.py
+permutation_importance.py
+pattern_analysis.py
+slice_analysis.py
+
