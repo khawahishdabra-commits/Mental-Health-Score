@@ -6,7 +6,7 @@ from typing import Literal
 from fastapi.middleware.cors import CORSMiddleware
 
 model = joblib.load('Mental_Health_Model.pkl')
-top_countries = ['Other','India','USA','Canada','Australia','UK','Germany','Mexico','Turkey','France']
+
 
 app = FastAPI()
 
@@ -44,31 +44,61 @@ class PredictionResponse(BaseModel):
 
 
 
-@app.get('/')
+@app.get("/")
 def greet():
-    return {'Welcome to Sheryians AI School Guys'}
+    return {
+        "message": "Mental Health Score Prediction API",
+        "status": "running"
+    }
 
+@app.get("/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "model_loaded": model is not None
+    }
 
-@app.post('/predict', response_model=PredictionResponse) #6.77777
+@app.get("/model-info")
+def model_info():
+    return {
+        "model_type": type(model.named_steps["regressor"]).__name__,
+        "n_estimators": model.named_steps["regressor"].n_estimators,
+        "features": [
+            "Age",
+            "Gender",
+            "Academic_Level",
+            "Most_Used_Platform",
+            "Purpose_Of_Use",
+            "Avg_Daily_Usage_Hours",
+            "Daily_Unlocks",
+            "Study_Hours",
+            "Physical_Activity_Hours",
+            "Sleep_Hours_Per_Night",
+            "Stress_Level",
+            "Country"
+        ]
+    }
+
+@app.post('/predict', response_model=PredictionResponse)
 def predict(data: StudentData):
-   
-   country_group = data.country if data.country in top_countries else "Other"
 
-   input_row = pd.DataFrame([{
-        'Age'                       :data.age,
-        'Gender'                    :data.gender,
-        'Country'                   :data.country,
-        'Academic_Level'            :data.academic_level,
-        'Most_Used_Platform'        :data.most_used_platform,
-        'Purpose_Of_Use'            :data.purpose_of_use,
-        'Avg_Daily_Usage_Hours'     :data.avg_daily_usage_hours,
-        'Daily_Unlocks'             :data.daily_unlocks,
-        'Study_Hours'               :data.study_hours,
-        'Physical_Activity_Hours'   :data.physical_activity_hours,
-        'Sleep_Hours_Per_Night'     :data.sleep_hours_per_night,
-        'Stress_Level'              :data.stress_level,
-        'Grouped_country'           :country_group
-   }])
+    input_row = pd.DataFrame([{
+        'Study_Hours': data.study_hours,
+        'Age': data.age,
+        'Avg_Daily_Usage_Hours': data.avg_daily_usage_hours,
+        'Daily_Unlocks': data.daily_unlocks,
+        'Physical_Activity_Hours': data.physical_activity_hours,
+        'Sleep_Hours_Per_Night': data.sleep_hours_per_night,
+        'Stress_Level': data.stress_level,
+        'Gender': data.gender,
+        'Academic_Level': data.academic_level,
+        'Most_Used_Platform': data.most_used_platform,
+        'Purpose_Of_Use': data.purpose_of_use,
+        'Country': data.country
+    }])
 
-   prediction = model.predict(input_row)[0] #6.77
-   return PredictionResponse(predicted_mental_health_score=round(float(prediction),2))
+    prediction = model.predict(input_row)[0]
+
+    return PredictionResponse(
+        predicted_mental_health_score=round(float(prediction), 2)
+    )
